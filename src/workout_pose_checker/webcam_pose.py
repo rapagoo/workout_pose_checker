@@ -1,7 +1,9 @@
-import math
 from pathlib import Path
+
 import cv2
 from ultralytics import YOLO
+
+from .pose_utils import calculate_angle, select_visible_side
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -16,55 +18,11 @@ BOTTOM_HIP_ANGLE = 100
 BOTTOM_KNEE_ANGLE = 110
 BOTTOM_HIP_DEPTH = -0.6
 CONFIRM_FRAMES = 3
+SQUAT_SIDE_INDEXES = {
+    "L": (5, 11, 13, 15),
+    "R": (6, 12, 14, 16),
+}
 
-
-def calculate_angle(point_a, point_b, point_c):
-    """point_b를 꼭짓점으로 하는 0~180도 사이의 각도를 계산합니다."""
-    vector_ba = (
-        point_a[0] - point_b[0],
-        point_a[1] - point_b[1],
-    )
-    vector_bc = (
-        point_c[0] - point_b[0],
-        point_c[1] - point_b[1],
-    )
-
-    cross = (
-        vector_ba[0] * vector_bc[1]
-        - vector_ba[1] * vector_bc[0]
-    )
-    dot = (
-        vector_ba[0] * vector_bc[0]
-        + vector_ba[1] * vector_bc[1]
-    )
-
-    return math.degrees(math.atan2(abs(cross), dot))
-
-
-def select_visible_side(points, scores):
-    """좌우 관절 중 전체 신뢰도가 더 높은 신체 측면을 선택합니다."""
-    sides = {
-        "L": (5, 11, 13, 15),
-        "R": (6, 12, 14, 16),
-    }
-
-    side_scores = {
-        side: min(scores[index] for index in indexes)
-        for side, indexes in sides.items()
-    }
-    side = max(side_scores, key=side_scores.get)
-
-    if side_scores[side] < KEYPOINT_CONFIDENCE:
-        return None
-
-    shoulder_index, hip_index, knee_index, ankle_index = sides[side]
-    return (
-        side,
-        points[shoulder_index],
-        points[hip_index],
-        points[knee_index],
-        points[ankle_index],
-    )
 
 def draw_text(frame, text, y, color=(255, 255, 255)):
     cv2.putText(
@@ -122,12 +80,22 @@ def main():
             ):
                 points = result.keypoints.xy[0].cpu().numpy()
                 scores = result.keypoints.conf[0].cpu().numpy()
-                selected = select_visible_side(points, scores)
+                side = select_visible_side(
+                    scores,
+                    SQUAT_SIDE_INDEXES,
+                    KEYPOINT_CONFIDENCE,
+                )
 
-                if selected is None:
-                    status = "관절 탐지 불가"
+                if side is None:
+                    status = "JOINTS_NOT_VISIBLE"
                 else:
-                    side, shoulder, hip, knee, ankle = selected
+                    indexes = SQUAT_SIDE_INDEXES[side]
+                    shoulder_index, hip_index, knee_index, ankle_index = indexes
+
+                    shoulder = points[shoulder_index]
+                    hip = points[hip_index]
+                    knee = points[knee_index]
+                    ankle = points[ankle_index]
 
                     hip_angle = calculate_angle(shoulder, hip, knee)
                     knee_angle = calculate_angle(hip, knee, ankle)
@@ -151,7 +119,7 @@ def main():
                     if has_started and not rep_in_progress:
                         rep_in_progress = True
                         reached_bottom = False
-                        status = "운동 중"
+                        status = "MOVING"
 
                     if rep_in_progress:
                         bottom_frames = (
@@ -163,28 +131,24 @@ def main():
 
                         if bottom_frames >= CONFIRM_FRAMES:
                             reached_bottom = True
-                            status = "내려감"
+                            status = "BOTTOM"
 
                         if standing_frames >= CONFIRM_FRAMES:
                             if reached_bottom:
                                 success_count += 1
-                                status = "성공"
+                                status = "SUCCESS"
                             else:
                                 failure_count += 1
-                                status = "실패"
+                                status = "FAIL"
 
                             rep_in_progress = False
                             reached_bottom = False
                             bottom_frames = 0
                             standing_frames = 0
                     elif is_standing:
-                        status = "준비 완료"
+                        status = "READY"
 
-                    draw_text(
-                        annotated_frame,
-                        f"Side: {side}",
-                        40,
-                    )
+                    draw_text(annotated_frame, f"Side: {side}", 40)
                     draw_text(
                         annotated_frame,
                         f"Hip angle: {hip_angle:.1f}",
@@ -204,11 +168,11 @@ def main():
                         (0, 255, 255),
                     )
             else:
-                status = "사람 탐지 실패"
+                status = "PERSON_NOT_FOUND"
 
-            draw_text(annotated_frame, f"상태: {status}", 170, (0, 255, 0))
-            draw_text(annotated_frame, f"성공: {success_count}", 200)
-            draw_text(annotated_frame, f"실패: {failure_count}", 230)
+            draw_text(annotated_frame, f"Status: {status}", 170, (0, 255, 0))
+            draw_text(annotated_frame, f"Success: {success_count}", 200)
+            draw_text(annotated_frame, f"Fail: {failure_count}", 230)
 
             cv2.imshow("Workout Pose Checker", annotated_frame)
 

@@ -1,14 +1,30 @@
 from pathlib import Path
 
 import cv2
-from ultralytics import YOLO
 
-from .analyzers import SquatAnalyzer
+from .pose_service import PoseService
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
 WINDOW_NAME = "Workout Pose Checker"
+EXERCISE = "squat"
+
+POSE_CONNECTIONS = (
+    (5, 6),
+    (5, 7),
+    (7, 9),
+    (6, 8),
+    (8, 10),
+    (5, 11),
+    (6, 12),
+    (11, 12),
+    (11, 13),
+    (13, 15),
+    (12, 14),
+    (14, 16),
+)
+DRAW_CONFIDENCE = 0.5
 
 
 def draw_text(frame, text, y, color=(255, 255, 255)):
@@ -23,21 +39,32 @@ def draw_text(frame, text, y, color=(255, 255, 255)):
     )
 
 
-def analyze_result(result, analyzer):
-    keypoints = result.keypoints
-    if (
-        keypoints is None
-        or keypoints.conf is None
-        or len(keypoints.xy) == 0
-    ):
-        return analyzer.person_not_found()
+def draw_pose(frame, keypoints):
+    visible = {
+        point["index"]: (
+            int(point["x"]),
+            int(point["y"]),
+        )
+        for point in keypoints
+        if point["confidence"] >= DRAW_CONFIDENCE
+    }
 
-    points = keypoints.xy[0].cpu().numpy()
-    scores = keypoints.conf[0].cpu().numpy()
-    return analyzer.analyze(points, scores)
+    for start, end in POSE_CONNECTIONS:
+        if start in visible and end in visible:
+            cv2.line(
+                frame,
+                visible[start],
+                visible[end],
+                (0, 255, 0),
+                2,
+            )
+
+    for position in visible.values():
+        cv2.circle(frame, position, 4, (0, 0, 255), -1)
 
 
 def draw_analysis(frame, analysis):
+    draw_pose(frame, analysis["keypoints"])
     metrics = analysis["metrics"]
 
     if analysis["side"] is not None:
@@ -80,14 +107,10 @@ def draw_analysis(frame, analysis):
 
 
 def main():
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(
-            f"모델 파일을 찾을 수 없습니다: {MODEL_PATH}\n"
-            "yolo26n-pose.pt 파일을 models 폴더에 넣어주세요."
-        )
-
-    model = YOLO(MODEL_PATH)
-    analyzer = SquatAnalyzer()
+    service = PoseService(
+        model_path=MODEL_PATH,
+        device="cuda:0",
+    )
     camera = cv2.VideoCapture(0)
 
     if not camera.isOpened():
@@ -99,18 +122,9 @@ def main():
             if not success:
                 raise RuntimeError("웹캠 프레임을 읽을 수 없습니다.")
 
-            result = model.predict(
-                source=frame,
-                conf=0.5,
-                imgsz=640,
-                device="cuda:0",
-                verbose=False,
-            )[0]
-
-            analysis = analyze_result(result, analyzer)
-            annotated_frame = result.plot()
-            draw_analysis(annotated_frame, analysis)
-            cv2.imshow(WINDOW_NAME, annotated_frame)
+            analysis = service.analyze_frame(frame, EXERCISE)
+            draw_analysis(frame, analysis)
+            cv2.imshow(WINDOW_NAME, frame)
 
             if cv2.waitKey(1) & 0xFF in (ord("q"), 27):
                 break

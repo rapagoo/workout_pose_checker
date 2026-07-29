@@ -68,6 +68,12 @@ environment.yml             팀 환경 기준
 requirements-lock.txt       현재 설치 상태 스냅샷
 ```
 
+## 개발 문서
+
+- [포즈 평가 코드 가이드](docs/pose_evaluation_guide.md): 파일별 역할, 처리 흐름,
+  상태 판정 방식과 기능 확장 방법
+- [모델·UI 연동 규칙](docs/model_ui_contract.md): UI 호출 방법과 반환 데이터 계약
+
 ## Git 브랜치 운영
 
 두 명이 짧게 진행하므로 Git Flow 대신 단순한 GitHub Flow를 사용합니다.

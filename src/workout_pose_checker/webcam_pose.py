@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import cv2
@@ -69,24 +70,38 @@ def draw_analysis(frame, analysis):
 
     if analysis["side"] is not None:
         draw_text(frame, f'Side: {analysis["side"]}', 40)
-        draw_text(
-            frame,
-            f'Hip angle: {metrics["hip_angle"]:.1f}',
-            70,
-            (0, 255, 255),
-        )
-        draw_text(
-            frame,
-            f'Knee angle: {metrics["knee_angle"]:.1f}',
-            100,
-            (0, 255, 255),
-        )
-        draw_text(
-            frame,
-            f'Hip depth: {metrics["hip_depth"]:.2f}',
-            130,
-            (0, 255, 255),
-        )
+        if analysis["exercise"] == "squat":
+            draw_text(
+                frame,
+                f'Hip angle: {metrics["hip_angle"]:.1f}',
+                70,
+                (0, 255, 255),
+            )
+            draw_text(
+                frame,
+                f'Knee angle: {metrics["knee_angle"]:.1f}',
+                100,
+                (0, 255, 255),
+            )
+            draw_text(
+                frame,
+                f'Hip depth: {metrics["hip_depth"]:.2f}',
+                130,
+                (0, 255, 255),
+            )
+        elif analysis["exercise"] == "pushup":
+            draw_text(
+                frame,
+                f'Elbow angle: {metrics["elbow_angle"]:.1f}',
+                70,
+                (0, 255, 255),
+            )
+            draw_text(
+                frame,
+                f'Body angle: {metrics["body_angle"]:.1f}',
+                100,
+                (0, 255, 255),
+            )
 
     draw_text(
         frame,
@@ -101,10 +116,9 @@ def draw_analysis(frame, analysis):
     )
 
 
-def main():
+def main(exercise=EXERCISE):
     service = PoseService(
         model_path=MODEL_PATH,
-        device="cuda:0",
     )
     camera = cv2.VideoCapture(0)
 
@@ -117,7 +131,7 @@ def main():
             if not success:
                 raise RuntimeError("웹캠 프레임을 읽을 수 없습니다.")
 
-            analysis = service.analyze_frame(frame, EXERCISE)
+            analysis = service.analyze_frame(frame, exercise)
             draw_analysis(frame, analysis)
             cv2.imshow(WINDOW_NAME, frame)
 
@@ -129,4 +143,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--exercise",
+        choices=("squat", "pushup"),
+        default=EXERCISE,
+    )
+    args = parser.parse_args()
+    main(exercise=args.exercise)

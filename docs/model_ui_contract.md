@@ -16,8 +16,7 @@ result = pose_service.analyze_frame(
 )
 ```
 
-- 현재 지원 운동 코드: `"squat"`
-- `"pushup"`은 추후 지원 예정입니다.
+- 현재 지원 운동 코드: `"squat"`, `"pushup"`
 - 모델 입력에는 회전과 좌우 반전을 적용하지 않습니다.
 - 화면 좌우 반전은 UI 출력 단계에서 적용합니다.
 - `L`과 `R`은 운동하는 사람의 신체 기준입니다.
@@ -67,6 +66,7 @@ READY
 GO_DOWN
 GO_UP
 SUCCESS
+KEEP_BODY_STRAIGHT
 PERSON_NOT_FOUND
 JOINTS_NOT_VISIBLE
 ```
@@ -79,6 +79,7 @@ JOINTS_NOT_VISIBLE
 | `GO_DOWN` | 움직이기 시작했으며 충분한 깊이까지 내려가야 하는 상태 | 내려가세요 |
 | `GO_UP` | 충분한 깊이에 도달하여 시작 자세로 올라와야 하는 상태 | 올라오세요 |
 | `SUCCESS` | 정상적으로 1회를 완료한 상태 | 성공! |
+| `KEEP_BODY_STRAIGHT` | 팔굽혀펴기 중 몸이 충분히 일직선이 아닌 상태 | 몸을 곧게 펴세요 |
 | `PERSON_NOT_FOUND` | 사람이 감지되지 않은 상태 | 화면 안으로 들어와 주세요 |
 | `JOINTS_NOT_VISIBLE` | 판정에 필요한 관절이 충분히 보이지 않는 상태 | 자세가 잘 보이도록 위치를 조정해 주세요 |
 

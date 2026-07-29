@@ -77,6 +77,16 @@ class FakeAnalyzer:
 
 
 class PoseServiceTest(unittest.TestCase):
+    def test_registers_squat_and_pushup_by_default(self):
+        service = PoseService(
+            model=FakeModel(FakeResult(FakeKeypoints())),
+        )
+
+        self.assertEqual(
+            set(service.analyzers),
+            {"squat", "pushup"},
+        )
+
     def test_analyzes_largest_detected_person_and_serializes_keypoints(self):
         points = np.zeros((2, 17, 2), dtype=float)
         points[0, :, :] = 10

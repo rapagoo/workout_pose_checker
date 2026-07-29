@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from .analyzers import SquatAnalyzer
+from .analyzers import PushupAnalyzer, SquatAnalyzer
 
 
 class PoseService:
     def __init__(
         self,
         model_path=None,
-        device="cuda:0",
+        device=None,
         *,
         model=None,
         analyzers=None,
@@ -35,7 +35,10 @@ class PoseService:
         self.analyzers = (
             analyzers
             if analyzers is not None
-            else {"squat": SquatAnalyzer()}
+            else {
+                "pushup": PushupAnalyzer(),
+                "squat": SquatAnalyzer(),
+            }
         )
 
     def analyze_frame(self, frame, exercise):

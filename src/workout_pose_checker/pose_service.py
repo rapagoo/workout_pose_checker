@@ -58,8 +58,21 @@ class PoseService:
             analysis["keypoints"] = []
             return analysis
 
-        points = keypoints.xy[0].cpu().numpy()
-        scores = keypoints.conf[0].cpu().numpy()
+        # 감지된 사람들 사각형 좌표 가져오기
+        boxes = result.boxes.xyxy.cpu().numpy()
+
+        # 각 사각형 너비와 높이 계산
+        widths = boxes[:, 2] - boxes[:, 0]
+        heights = boxes[:, 3] - boxes[:, 1]
+
+        # 사각형 면적이 가장 큰 사람 찾기
+        areas = widths * heights
+        person_index = int(areas.argmax())
+
+        # 가장 크게 보이는 사람 정보만 가져오기
+        points = keypoints.xy[person_index].cpu().numpy()
+        scores = keypoints.conf[person_index].cpu().numpy()
+        
         analysis = analyzer.analyze(points, scores)
         analysis["keypoints"] = self._serialize_keypoints(points, scores)
         return analysis

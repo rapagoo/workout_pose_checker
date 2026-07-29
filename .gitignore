@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+.conda/
+
+# IDE / OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local data, model weights, and generated outputs
+data/*
+!data/.gitkeep
+models/*
+!models/.gitkeep
+runs/
+*.pt
+*.onnx
+
+# Ultralytics local state
+.ultralytics/
+
+# Local secrets and configuration
+.env
+.env.*
+

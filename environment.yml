@@ -1,0 +1,11 @@
+name: yolo_pose
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      # 현재 yolo_pose 환경에서 확인한 직접 의존성
+      - ultralytics==8.4.109
+      - opencv-python==5.0.0.93
+

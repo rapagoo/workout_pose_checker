@@ -29,7 +29,6 @@ class SquatAnalyzer:
     def reset(self):
         """누적 횟수와 진행 중인 반복 상태를 초기화한다."""
         self.success_count = 0
-        self.failure_count = 0
         self.rep_in_progress = False
         self.reached_bottom = False
         self.bottom_frames = 0
@@ -137,7 +136,6 @@ class SquatAnalyzer:
             "exercise": "squat",
             "status": self.status,
             "success_count": self.success_count,
-            "failure_count": self.failure_count,
             "side": side,
             "metrics": {
                 "hip_angle": hip_angle,

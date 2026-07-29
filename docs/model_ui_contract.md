@@ -30,7 +30,6 @@ result = pose_service.analyze_frame(
     "exercise": "squat",
     "status": "GO_UP",
     "success_count": 3,
-    "failure_count": 0,
     "side": "L",
     "metrics": {
         "hip_angle": 92.4,
@@ -83,9 +82,8 @@ JOINTS_NOT_VISIBLE
 | `PERSON_NOT_FOUND` | 사람이 감지되지 않은 상태 | 화면 안으로 들어와 주세요 |
 | `JOINTS_NOT_VISIBLE` | 판정에 필요한 관절이 충분히 보이지 않는 상태 | 자세가 잘 보이도록 위치를 조정해 주세요 |
 
-충분히 내려가지 않고 시작 자세로 돌아오면 실패로 기록하지 않고
-`READY`로 복귀합니다. `failure_count`는 기존 UI 호환성을 위해 유지하며
-현재는 항상 `0`입니다.
+충분히 내려가지 않고 시작 자세로 돌아오면 횟수를 변경하지 않고
+`READY`로 복귀합니다.
 
 모델은 상태 코드를 반환하고, UI가 이를 사용자용 문구로 변환합니다.
 

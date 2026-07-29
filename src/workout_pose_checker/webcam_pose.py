@@ -1,3 +1,5 @@
+"""웹캠 입력으로 포즈 평가 기능을 확인하는 간단한 실행 프로그램."""
+
 import argparse
 from pathlib import Path
 
@@ -29,6 +31,7 @@ DRAW_CONFIDENCE = 0.5
 
 
 def draw_text(frame, text, y, color=(255, 255, 255)):
+    """프레임 왼쪽의 지정된 높이에 상태 문구를 그린다."""
     cv2.putText(
         frame,
         text,
@@ -41,6 +44,7 @@ def draw_text(frame, text, y, color=(255, 255, 255)):
 
 
 def draw_pose(frame, keypoints):
+    """신뢰도 기준을 통과한 관절과 연결선을 프레임에 그린다."""
     visible = {
         point["index"]: (
             int(point["x"]),
@@ -65,6 +69,7 @@ def draw_pose(frame, keypoints):
 
 
 def draw_analysis(frame, analysis):
+    """서비스 결과의 관절, 측정값, 상태와 성공 횟수를 화면에 표시한다."""
     draw_pose(frame, analysis["keypoints"])
     metrics = analysis["metrics"]
 
@@ -117,6 +122,7 @@ def draw_analysis(frame, analysis):
 
 
 def main(exercise=EXERCISE):
+    """웹캠 프레임을 반복 분석하며 q 또는 Esc 입력 전까지 결과를 보여준다."""
     service = PoseService(
         model_path=MODEL_PATH,
     )
@@ -131,6 +137,7 @@ def main(exercise=EXERCISE):
             if not success:
                 raise RuntimeError("웹캠 프레임을 읽을 수 없습니다.")
 
+            # PoseService가 UI와 모델 사이의 유일한 연동 지점이다.
             analysis = service.analyze_frame(frame, exercise)
             draw_analysis(frame, analysis)
             cv2.imshow(WINDOW_NAME, frame)

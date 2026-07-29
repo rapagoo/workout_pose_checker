@@ -1,6 +1,9 @@
+"""스쿼트 자세의 단계와 성공 횟수를 판정한다."""
+
 from ..pose_utils import calculate_angle, select_visible_side
 
 
+# COCO 관절 번호: 어깨, 엉덩이, 무릎, 발목 순서이다.
 SQUAT_SIDE_INDEXES = {
     "L": (5, 11, 13, 15),
     "R": (6, 12, 14, 16),
@@ -18,10 +21,13 @@ CONFIRM_FRAMES = 3
 
 
 class SquatAnalyzer:
+    """관절 각도와 깊이를 이용해 스쿼트 1회의 상태를 추적한다."""
+
     def __init__(self):
         self.reset()
 
     def reset(self):
+        """누적 횟수와 진행 중인 반복 상태를 초기화한다."""
         self.success_count = 0
         self.failure_count = 0
         self.rep_in_progress = False
@@ -31,6 +37,7 @@ class SquatAnalyzer:
         self.status = "READY"
 
     def analyze(self, points, scores):
+        """한 프레임의 관절로 스쿼트 상태를 갱신하고 결과를 반환한다."""
         side = select_visible_side(
             scores,
             SQUAT_SIDE_INDEXES,
@@ -54,6 +61,7 @@ class SquatAnalyzer:
         lower_leg_length = max(abs(ankle[1] - knee[1]), 1)
         hip_depth = (hip[1] - knee[1]) / lower_leg_length
 
+        # 각 프레임을 서기, 시작, 최저점 조건으로 분류한다.
         is_standing = (
             hip_angle >= STANDING_HIP_ANGLE
             and knee_angle >= STANDING_KNEE_ANGLE
@@ -68,12 +76,14 @@ class SquatAnalyzer:
             and hip_depth >= BOTTOM_HIP_DEPTH
         )
 
+        # 서 있는 상태에서 관절이 굽혀지면 새로운 반복이 시작된다.
         if has_started and not self.rep_in_progress:
             self.rep_in_progress = True
             self.reached_bottom = False
             self.status = "GO_DOWN"
 
         if self.rep_in_progress:
+            # 연속 프레임 확인으로 순간적인 관절 좌표 흔들림을 걸러낸다.
             self.bottom_frames = (
                 self.bottom_frames + 1 if is_bottom else 0
             )
@@ -108,6 +118,7 @@ class SquatAnalyzer:
         )
 
     def person_not_found(self):
+        """사람을 찾지 못한 프레임의 표준 결과를 반환한다."""
         self.status = "PERSON_NOT_FOUND"
         return self._result(detected=False)
 
@@ -120,6 +131,7 @@ class SquatAnalyzer:
         knee_angle=None,
         hip_depth=None,
     ):
+        """UI 계약에 맞는 스쿼트 분석 결과를 구성한다."""
         return {
             "detected": detected,
             "exercise": "squat",

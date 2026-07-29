@@ -1,6 +1,6 @@
 # Workout Pose Checker
 
-YOLO26 Pose를 이용해 스쿼트 자세를 분석하는 2인 단기 프로젝트입니다.
+YOLO26 Pose를 이용해 스쿼트와 팔굽혀펴기 자세를 분석하는 2인 단기 프로젝트입니다.
 현재 단계에서는 웹캠 포즈 추론부터 검증합니다.
 
 ## 확인된 개발 환경
@@ -42,6 +42,16 @@ GPU를 사용하는 PC는 먼저 위 환경을 만든 다음, 해당 PC의 NVIDI
 ```powershell
 python -m src.workout_pose_checker.webcam_pose
 ```
+
+스쿼트 또는 팔굽혀펴기를 지정해서 실행할 수 있습니다.
+
+```powershell
+python -m src.workout_pose_checker.webcam_pose --exercise squat
+python -m src.workout_pose_checker.webcam_pose --exercise pushup
+```
+
+팔굽혀펴기는 어깨, 팔꿈치, 손목, 엉덩이, 발목이 보이도록
+카메라를 몸의 측면에 놓아야 안정적으로 판정됩니다.
 
 모델 가중치, 데이터셋, `runs/` 결과물은 Git에 올리지 않습니다.
 팀원 간에는 공유 드라이브나 릴리스 자산 등 별도 저장소로 전달합니다.

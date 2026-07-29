@@ -14,7 +14,7 @@ START_HIP_ANGLE = 145
 START_KNEE_ANGLE = 150
 BOTTOM_HIP_ANGLE = 100
 BOTTOM_KNEE_ANGLE = 110
-BOTTOM_HIP_DEPTH = -0.33
+BOTTOM_HIP_DEPTH = -0.6
 CONFIRM_FRAMES = 3
 
 
@@ -125,7 +125,7 @@ def main():
                 selected = select_visible_side(points, scores)
 
                 if selected is None:
-                    status = "JOINTS NOT VISIBLE"
+                    status = "관절 탐지 불가"
                 else:
                     side, shoulder, hip, knee, ankle = selected
 
@@ -151,7 +151,7 @@ def main():
                     if has_started and not rep_in_progress:
                         rep_in_progress = True
                         reached_bottom = False
-                        status = "MOVING"
+                        status = "운동 중"
 
                     if rep_in_progress:
                         bottom_frames = (
@@ -163,22 +163,22 @@ def main():
 
                         if bottom_frames >= CONFIRM_FRAMES:
                             reached_bottom = True
-                            status = "BOTTOM"
+                            status = "내려감"
 
                         if standing_frames >= CONFIRM_FRAMES:
                             if reached_bottom:
                                 success_count += 1
-                                status = "SUCCESS"
+                                status = "성공"
                             else:
                                 failure_count += 1
-                                status = "FAIL"
+                                status = "실패"
 
                             rep_in_progress = False
                             reached_bottom = False
                             bottom_frames = 0
                             standing_frames = 0
                     elif is_standing:
-                        status = "READY"
+                        status = "준비 완료"
 
                     draw_text(
                         annotated_frame,
@@ -204,11 +204,11 @@ def main():
                         (0, 255, 255),
                     )
             else:
-                status = "PERSON NOT FOUND"
+                status = "사람 탐지 실패"
 
-            draw_text(annotated_frame, f"Status: {status}", 170, (0, 255, 0))
-            draw_text(annotated_frame, f"Success: {success_count}", 200)
-            draw_text(annotated_frame, f"Fail: {failure_count}", 230)
+            draw_text(annotated_frame, f"상태: {status}", 170, (0, 255, 0))
+            draw_text(annotated_frame, f"성공: {success_count}", 200)
+            draw_text(annotated_frame, f"실패: {failure_count}", 230)
 
             cv2.imshow("Workout Pose Checker", annotated_frame)
 

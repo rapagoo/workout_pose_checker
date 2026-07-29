@@ -62,7 +62,6 @@ class PushupAnalyzerTest(unittest.TestCase):
 
         self.assertEqual(result["status"], "SUCCESS")
         self.assertEqual(result["success_count"], 1)
-        self.assertEqual(result["failure_count"], 0)
 
     def test_does_not_count_shallow_movement(self):
         analyzer = PushupAnalyzer()
@@ -103,13 +102,11 @@ class PushupAnalyzerTest(unittest.TestCase):
     def test_reset_clears_state_and_counts(self):
         analyzer = PushupAnalyzer()
         analyzer.success_count = 2
-        analyzer.failure_count = 1
         analyzer.rep_in_progress = True
 
         analyzer.reset()
 
         self.assertEqual(analyzer.success_count, 0)
-        self.assertEqual(analyzer.failure_count, 0)
         self.assertFalse(analyzer.rep_in_progress)
         self.assertEqual(analyzer.status, "READY")
 

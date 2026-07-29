@@ -69,7 +69,6 @@ class FakeAnalyzer:
             "exercise": "squat",
             "status": status,
             "success_count": 0,
-            "failure_count": 0,
             "side": None,
             "metrics": {},
             "error": None,

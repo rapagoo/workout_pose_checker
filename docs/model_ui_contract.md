@@ -30,7 +30,6 @@ result = pose_service.analyze_frame(
     "exercise": "squat",
     "status": "GO_UP",
     "success_count": 3,
-    "failure_count": 0,
     "side": "L",
     "metrics": {
         "hip_angle": 92.4,
@@ -83,9 +82,8 @@ JOINTS_NOT_VISIBLE
 | `PERSON_NOT_FOUND` | 사람이 감지되지 않은 상태 | 화면 안으로 들어와 주세요 |
 | `JOINTS_NOT_VISIBLE` | 판정에 필요한 관절이 충분히 보이지 않는 상태 | 자세가 잘 보이도록 위치를 조정해 주세요 |
 
-충분히 내려가지 않고 시작 자세로 돌아오면 실패로 기록하지 않고
-`READY`로 복귀합니다. `failure_count`는 기존 UI 호환성을 위해 유지하며
-현재는 항상 `0`입니다.
+충분히 내려가지 않고 시작 자세로 돌아오면 횟수를 변경하지 않고
+`READY`로 복귀합니다.
 
 모델은 상태 코드를 반환하고, UI가 이를 사용자용 문구로 변환합니다.
 
@@ -100,3 +98,55 @@ JOINTS_NOT_VISIBLE
 ```python
 pose_service.reset(exercise="squat")
 ```
+
+## Mock 서비스로 UI 테스트
+
+`MockPoseService`는 모델 가중치나 실제 운동 없이 UI의 상태 문구와 성공 횟수
+표시를 확인하기 위한 테스트 서비스입니다. 실제 `PoseService`와 동일하게
+`analyze_frame(frame, exercise)`와 `reset(exercise)`를 호출합니다.
+
+UI의 서비스 생성 부분만 다음과 같이 교체합니다.
+
+```python
+from src.workout_pose_checker.mock_pose_service import MockPoseService
+
+pose_service = MockPoseService(frames_per_status=30)
+```
+
+프레임을 처리하는 UI 코드는 실제 모델을 사용할 때와 같습니다.
+
+```python
+result = pose_service.analyze_frame(
+    frame=frame,
+    exercise=selected_exercise,
+)
+```
+
+Mock 서비스는 입력 프레임의 내용을 분석하지 않고 다음 상태를 반복해서
+반환합니다.
+
+```text
+READY → GO_DOWN → GO_UP → SUCCESS → READY
+```
+
+`frames_per_status`는 각 상태를 유지하는 프레임 수입니다. UI가 초당
+약 30프레임으로 실행된다면 기본값 `30`은 상태당 약 1초에 해당합니다.
+`SUCCESS`에 처음 진입할 때만 `success_count`가 1 증가합니다.
+
+운동을 변경하거나 UI의 초기화 버튼을 누를 때는 반드시 초기화합니다.
+
+```python
+pose_service.reset(exercise=selected_exercise)
+```
+
+현재 Mock 서비스는 상태 문구와 성공 횟수 확인을 위한 최소 구현입니다.
+
+- `detected`: 항상 `True`
+- `side`: 항상 `None`
+- `keypoints`: 항상 빈 배열이므로 스켈레톤을 표시하지 않음
+- `metrics`: 운동별 키는 제공하지만 값은 모두 `None`
+- 지원 운동: `"squat"`, `"pushup"`
+
+따라서 UI는 Mock 모드에서 상태 문구, 성공 횟수, 운동 변경과 초기화 동작을
+확인할 수 있습니다. 실제 관절 각도와 스켈레톤 표시는 실제 `PoseService`로
+확인합니다.

@@ -5,7 +5,11 @@ from pathlib import Path
 
 import cv2
 
-from .pose_service import PoseService
+# 실제 모델 테스트
+# from .pose_service import PoseService
+
+# Mock 테스트
+from .mock_pose_service import MockPoseService
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -123,9 +127,12 @@ def draw_analysis(frame, analysis):
 
 def main(exercise=EXERCISE):
     """웹캠 프레임을 반복 분석하며 q 또는 Esc 입력 전까지 결과를 보여준다."""
-    service = PoseService(
-        model_path=MODEL_PATH,
-    )
+    # 실제 모델
+    # service = PoseService(model_path=MODEL_PATH)
+
+    # Mock 모델
+    service = MockPoseService(frames_per_status=30)
+
     camera = cv2.VideoCapture(0)
 
     if not camera.isOpened():

@@ -71,7 +71,7 @@ class SquatAnalyzer:
         if has_started and not self.rep_in_progress:
             self.rep_in_progress = True
             self.reached_bottom = False
-            self.status = "MOVING"
+            self.status = "GO_DOWN"
 
         if self.rep_in_progress:
             self.bottom_frames = (
@@ -83,15 +83,14 @@ class SquatAnalyzer:
 
             if self.bottom_frames >= CONFIRM_FRAMES:
                 self.reached_bottom = True
-                self.status = "BOTTOM"
+                self.status = "GO_UP"
 
             if self.standing_frames >= CONFIRM_FRAMES:
                 if self.reached_bottom:
                     self.success_count += 1
                     self.status = "SUCCESS"
                 else:
-                    self.failure_count += 1
-                    self.status = "FAIL"
+                    self.status = "READY"
 
                 self.rep_in_progress = False
                 self.reached_bottom = False

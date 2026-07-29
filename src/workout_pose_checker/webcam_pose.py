@@ -99,11 +99,6 @@ def draw_analysis(frame, analysis):
         f'Success: {analysis["success_count"]}',
         200,
     )
-    draw_text(
-        frame,
-        f'Fail: {analysis["failure_count"]}',
-        230,
-    )
 
 
 def main():

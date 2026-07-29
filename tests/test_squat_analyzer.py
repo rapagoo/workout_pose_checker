@@ -52,16 +52,31 @@ class SquatAnalyzerTest(unittest.TestCase):
         self.assertEqual(result["success_count"], 1)
         self.assertEqual(result["failure_count"], 0)
 
-    def test_counts_failure_without_reaching_bottom(self):
+    def test_returns_to_ready_without_counting_shallow_movement(self):
         analyzer = SquatAnalyzer()
 
         analyzer.analyze(*PARTIAL_POSE)
         for _ in range(CONFIRM_FRAMES):
             result = analyzer.analyze(*STANDING_POSE)
 
-        self.assertEqual(result["status"], "FAIL")
+        self.assertEqual(result["status"], "READY")
         self.assertEqual(result["success_count"], 0)
-        self.assertEqual(result["failure_count"], 1)
+        self.assertEqual(result["failure_count"], 0)
+
+    def test_prompts_user_to_go_down_after_movement_starts(self):
+        analyzer = SquatAnalyzer()
+
+        result = analyzer.analyze(*PARTIAL_POSE)
+
+        self.assertEqual(result["status"], "GO_DOWN")
+
+    def test_prompts_user_to_go_up_after_confirmed_bottom(self):
+        analyzer = SquatAnalyzer()
+
+        for _ in range(CONFIRM_FRAMES):
+            result = analyzer.analyze(*BOTTOM_POSE)
+
+        self.assertEqual(result["status"], "GO_UP")
 
     def test_reset_clears_state_and_counts(self):
         analyzer = SquatAnalyzer()

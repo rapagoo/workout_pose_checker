@@ -28,9 +28,15 @@ class FakeKeypoints:
         self.conf = None if scores is None else FakeTensor(scores)
 
 
+class FakeBoxes:
+    def __init__(self, boxes=None):
+        self.xyxy = FakeTensor(boxes if boxes is not None else [])
+
+
 class FakeResult:
-    def __init__(self, keypoints):
+    def __init__(self, keypoints, boxes=None):
         self.keypoints = keypoints
+        self.boxes = FakeBoxes(boxes)
 
 
 class FakeModel:
@@ -71,12 +77,23 @@ class FakeAnalyzer:
 
 
 class PoseServiceTest(unittest.TestCase):
-    def test_analyzes_first_detected_person_and_serializes_keypoints(self):
-        points = np.zeros((1, 17, 2), dtype=float)
-        scores = np.full((1, 17), 0.9, dtype=float)
+    def test_analyzes_largest_detected_person_and_serializes_keypoints(self):
+        points = np.zeros((2, 17, 2), dtype=float)
+        points[0, :, :] = 10
+        points[1, :, :] = 20
+        scores = np.full((2, 17), 0.9, dtype=float)
+        boxes = np.array(
+            [
+                [0, 0, 100, 100],
+                [0, 0, 300, 400],
+            ],
+            dtype=float,
+        )
         analyzer = FakeAnalyzer()
         service = PoseService(
-            model=FakeModel(FakeResult(FakeKeypoints(points, scores))),
+            model=FakeModel(
+                FakeResult(FakeKeypoints(points, scores), boxes)
+            ),
             analyzers={"squat": analyzer},
         )
 
@@ -85,7 +102,7 @@ class PoseServiceTest(unittest.TestCase):
         self.assertTrue(result["detected"])
         self.assertEqual(len(result["keypoints"]), 17)
         self.assertEqual(result["keypoints"][0]["confidence"], 0.9)
-        np.testing.assert_array_equal(analyzer.last_points, points[0])
+        np.testing.assert_array_equal(analyzer.last_points, points[1])
 
     def test_returns_person_not_found_when_keypoints_are_empty(self):
         analyzer = FakeAnalyzer()

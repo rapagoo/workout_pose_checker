@@ -1,2 +1,1 @@
 """Squat pose checker package."""
-

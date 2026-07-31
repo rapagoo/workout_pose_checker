@@ -39,6 +39,20 @@ GPU를 사용하는 PC는 먼저 위 환경을 만든 다음, 해당 PC의 NVIDI
 
 `yolo26n-pose.pt`를 `models/`에 넣고 프로젝트 루트에서 실행합니다.
 
+PySide6 UI에서 운동을 선택하고 운동 화면 안에 웹캠 영상을 표시하려면 다음을
+실행합니다.
+
+```powershell
+python src/workout_pose_checker/main_window.py
+```
+
+운동 화면으로 이동하면 기본 웹캠이 자동으로 열리며, `포기하기` 버튼이나 창
+닫기를 사용하면 웹캠 장치가 해제됩니다. 현재 UI는 `MockPoseService`와 연결되어
+실제 추론 없이 `준비 → 내려가세요 → 올라오세요 → 성공!` 상태를 반복하고 성공
+횟수와 진행률을 갱신합니다.
+
+별도의 OpenCV 확인 창에서 포즈 평가 서비스를 실행하려면 다음을 실행합니다.
+
 ```powershell
 python -m src.workout_pose_checker.webcam_pose
 ```

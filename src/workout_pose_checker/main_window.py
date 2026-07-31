@@ -1,6 +1,7 @@
 import sys
 
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
+from mock_pose_service import MockPoseService
 from pages.choose_page import ChoosePage
 from pages.exercise_page import ExercisePage
 
@@ -17,7 +18,8 @@ class MainWindow(QWidget):
 
         # 페이지 인스턴스 생성 (self를 전달하여 MainWindow 조작 가능하게 함)
         self.choose_page = ChoosePage(self)
-        self.exercise_page = ExercisePage(self)
+        self.pose_service = MockPoseService(frames_per_status=30)
+        self.exercise_page = ExercisePage(self, pose_service=self.pose_service)
 
         self.stack.addWidget(self.choose_page)
         self.stack.addWidget(self.exercise_page)

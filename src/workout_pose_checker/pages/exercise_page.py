@@ -11,15 +11,33 @@ from PySide6.QtGui import QImage, QPixmap
 
 class ExercisePage(QWidget):
 
-    def __init__(self, main_window=None):
+    STATUS_MESSAGES = {
+        "READY": "준비",
+        "GO_DOWN": "내려가세요",
+        "GO_UP": "올라오세요",
+        "SUCCESS": "성공!",
+        "KEEP_BODY_STRAIGHT": "몸을 곧게 펴세요",
+        "PERSON_NOT_FOUND": "화면 안으로 들어와 주세요",
+        "JOINTS_NOT_VISIBLE": "자세가 잘 보이도록 위치를 조정해 주세요",
+    }
+
+    EXERCISES = {
+        0: ("squat", "스쿼트"),
+        1: ("pushup", "팔굽혀펴기"),
+    }
+
+    def __init__(self, main_window=None, pose_service=None):
         super().__init__()
 
         self.main_window = main_window
+        self.pose_service = pose_service
 
         # 운동 데이터 관련 상태 변수
         self.mode = "횟수"       # "시간" 또는 "횟수"
         self.target_level = 30   # 목표 수치
+        self.exercise_code = "squat"
         self.exercise_name = "스쿼트"
+        self.status = "READY"
         
         self.success_count = 0
         self.fail_count = 0
@@ -30,6 +48,12 @@ class ExercisePage(QWidget):
         # 실시간 타이머 설정 (1초마다 update_timer 실행)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_timer)
+
+        # 웹캠 관련 상태
+        self.camera = None
+
+        self.camera_timer = QTimer(self)
+        self.camera_timer.timeout.connect(self.read_camera_frame)
 
     def init_UI(self):
         # ChoosePage와 통일감을 주는 QSS 스타일시트
@@ -123,6 +147,8 @@ class ExercisePage(QWidget):
         # ==========================================
         # 타이머 카드
         self.lbl_timer = self.create_info_card("00:00", "#1976D2")
+        # 운동 상태 카드
+        self.lbl_status = self.create_info_card("준비", "#7B1FA2")
         # 성공 카운트 카드
         self.lbl_success = self.create_info_card("성공: 0회", "#43A047")
         # 실패 카운트 카드
@@ -133,6 +159,7 @@ class ExercisePage(QWidget):
         right_side_layout = QVBoxLayout()
         right_side_layout.setSpacing(12)
         right_side_layout.addWidget(self.lbl_timer)
+        right_side_layout.addWidget(self.lbl_status)
         right_side_layout.addWidget(self.lbl_success)
         right_side_layout.addWidget(self.lbl_fail)
         right_side_layout.addWidget(self.lbl_total)
@@ -184,13 +211,23 @@ class ExercisePage(QWidget):
         
         self.mode = mode
         self.target_level = level
+        self.exercise_code, self.exercise_name = self.EXERCISES.get(
+            image_idx,
+            self.EXERCISES[0],
+        )
         self.success_count = 0
         self.fail_count = 0
         self.elapsed_seconds = 0
+        self.status = "READY"
+
+        if self.pose_service is not None:
+            self.pose_service.reset(self.exercise_code)
 
         # UI 업데이트
         unit = "분" if mode == "시간" else "회"
         self.goal_label.setText(f"목표 - {self.exercise_name} {self.target_level}{unit}!")
+        self.lbl_timer.setText("00:00")
+        self.update_status()
         
         self.progress_bar.setRange(0, self.target_level if level > 0 else 1)
         self.progress_bar.setValue(0)
@@ -199,6 +236,68 @@ class ExercisePage(QWidget):
         
         # 타이머 시작
         self.timer.start(1000)
+        self.start_camera()
+
+    def start_camera(self):
+        """기본 웹캠을 열고 프레임 갱신을 시작한다."""
+        if self.camera is None:
+            self.camera = cv2.VideoCapture(0)
+
+        if not self.camera.isOpened():
+            self.video_label.setText("웹캠을 열 수 없습니다.")
+            self.camera.release()
+            self.camera = None
+            return
+
+        # 약 30 FPS로 프레임을 읽는다.
+        self.camera_timer.start(30)
+
+    def read_camera_frame(self):
+        """웹캠 프레임을 읽어 화면 송출 영역에 표시한다."""
+        if self.camera is None or not self.camera.isOpened():
+            return
+
+        success, frame = self.camera.read()
+        if not success:
+            self.video_label.setText("웹캠 프레임을 읽을 수 없습니다.")
+            self.stop_camera(reset_label=False)
+            return
+
+        if self.pose_service is not None:
+            analysis = self.pose_service.analyze_frame(
+                frame=frame,
+                exercise=self.exercise_code,
+            )
+            self.apply_analysis(analysis)
+
+        # 분석에는 원본을 사용하고 출력 화면에만 좌우 반전을 적용한다.
+        display_frame = cv2.flip(frame, 1)
+        self.update_frame(display_frame)
+
+    def apply_analysis(self, analysis):
+        """포즈 서비스 결과를 운동 화면의 상태와 카운트에 반영한다."""
+        self.status = analysis["status"]
+        self.success_count = analysis["success_count"]
+        self.fail_count = analysis.get("failure_count", 0)
+        self.update_status()
+        self.update_counts()
+
+    def update_status(self):
+        """상태 코드를 사용자용 안내 문구로 표시한다."""
+        message = self.STATUS_MESSAGES.get(self.status, self.status)
+        self.lbl_status.setText(message)
+
+    def stop_camera(self, reset_label=True):
+        """웹캠 갱신을 중지하고 카메라 장치를 해제한다."""
+        self.camera_timer.stop()
+
+        if self.camera is not None:
+            self.camera.release()
+            self.camera = None
+
+        if reset_label:
+            self.video_label.clear()
+            self.video_label.setText("화면 송출 공간 (웹캠/영상)")
 
     def update_frame(self, cv_img):
         """OpenCV 웹캠 프레임을 비디오 라벨에 표시하는 함수"""
@@ -239,10 +338,17 @@ class ExercisePage(QWidget):
     def quit_exercise(self):
         """포기하기 버튼 클릭 시"""
         self.timer.stop()
+        self.stop_camera()
         if self.main_window and hasattr(self.main_window, "show_choose_page"):
             self.main_window.show_choose_page()
         else:
             print("[단독 실행] 운동 중단 - 선택 화면으로 이동")
+
+    def closeEvent(self, event):
+        """창이 닫힐 때 타이머와 웹캠 자원을 정리한다."""
+        self.timer.stop()
+        self.stop_camera(reset_label=False)
+        super().closeEvent(event)
 
 
 if __name__ == "__main__":

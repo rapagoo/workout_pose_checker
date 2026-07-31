@@ -10,12 +10,12 @@ if str(SRC_ROOT) not in sys.path:
 
 from workout_pose_checker.pages.choose_page import ChoosePage
 from workout_pose_checker.pages.exercise_page import ExercisePage
+from workout_pose_checker.pages.result_page import ResultPage
 from workout_pose_checker.pose_service import PoseService
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
-
 
 class MainWindow(QWidget):
 
@@ -31,9 +31,14 @@ class MainWindow(QWidget):
         self.choose_page = ChoosePage(self)
         self.pose_service = PoseService(model_path=MODEL_PATH)
         self.exercise_page = ExercisePage(self, pose_service=self.pose_service)
+        self.result_page = ResultPage(self)
+
+        self.success_count = 0
+        self.fail_count = 0
 
         self.stack.addWidget(self.choose_page)
         self.stack.addWidget(self.exercise_page)
+        self.stack.addWidget(self.result_page)
 
         # 메인 레이아웃 설정 (여백 제거)
         layout = QVBoxLayout()
@@ -66,6 +71,18 @@ class MainWindow(QWidget):
     def show_choose_page(self):
         
         self.stack.setCurrentWidget(self.choose_page)
+
+    def show_result_page(self, success, fail, time):
+
+        self.result_page.set_result(
+            success,
+            fail,
+            time
+        )
+
+        self.stack.setCurrentWidget(
+            self.result_page
+        )
 
 
 if __name__ == "__main__":

@@ -1,9 +1,20 @@
 import sys
+from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
-from mock_pose_service import MockPoseService
-from pages.choose_page import ChoosePage
-from pages.exercise_page import ExercisePage
+
+# Support launching this file directly from the project root.
+SRC_ROOT = Path(__file__).resolve().parents[1]
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from workout_pose_checker.pages.choose_page import ChoosePage
+from workout_pose_checker.pages.exercise_page import ExercisePage
+from workout_pose_checker.pose_service import PoseService
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
 
 
 class MainWindow(QWidget):
@@ -18,7 +29,7 @@ class MainWindow(QWidget):
 
         # 페이지 인스턴스 생성 (self를 전달하여 MainWindow 조작 가능하게 함)
         self.choose_page = ChoosePage(self)
-        self.pose_service = MockPoseService(frames_per_status=30)
+        self.pose_service = PoseService(model_path=MODEL_PATH)
         self.exercise_page = ExercisePage(self, pose_service=self.pose_service)
 
         self.stack.addWidget(self.choose_page)

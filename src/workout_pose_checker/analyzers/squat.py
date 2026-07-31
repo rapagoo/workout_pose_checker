@@ -1,5 +1,7 @@
 """스쿼트 자세의 단계와 성공 횟수를 판정한다."""
 
+import math
+
 from ..pose_utils import calculate_angle, select_visible_side
 
 
@@ -8,8 +10,12 @@ SQUAT_SIDE_INDEXES = {
     "L": (5, 11, 13, 15),
     "R": (6, 12, 14, 16),
 }
+SQUAT_FRONT_INDEXES = (5, 6, 11, 12, 13, 14, 15, 16)
 
 KEYPOINT_CONFIDENCE = 0.5
+FRONT_VIEW_RATIO = 0.65
+FRONT_VIEW_EXIT_RATIO = 0.50
+VIEW_CONFIRM_FRAMES = 5
 STANDING_HIP_ANGLE = 155
 STANDING_KNEE_ANGLE = 160
 START_HIP_ANGLE = 145
@@ -34,9 +40,32 @@ class SquatAnalyzer:
         self.bottom_frames = 0
         self.standing_frames = 0
         self.status = "READY"
+        self.current_view = None
+        self.pending_view = None
+        self.pending_view_frames = 0
 
     def analyze(self, points, scores):
         """한 프레임의 관절로 스쿼트 상태를 갱신하고 결과를 반환한다."""
+        front_metrics = self._front_metrics(points, scores)
+        selected_view = self._select_view(front_metrics)
+
+        if selected_view == "FRONT":
+            if front_metrics is None:
+                self.status = "JOINTS_NOT_VISIBLE"
+                return self._result(detected=False, side="FRONT")
+
+            return self._analyze_metrics(
+                side="FRONT",
+                hip_angle=front_metrics["hip_angle"],
+                knee_angle=front_metrics["knee_angle"],
+                hip_depth=front_metrics["hip_depth"],
+                left_hip_angle=front_metrics["left_hip_angle"],
+                right_hip_angle=front_metrics["right_hip_angle"],
+                left_knee_angle=front_metrics["left_knee_angle"],
+                right_knee_angle=front_metrics["right_knee_angle"],
+                front_view_ratio=front_metrics["front_view_ratio"],
+            )
+
         side = select_visible_side(
             scores,
             SQUAT_SIDE_INDEXES,
@@ -60,6 +89,120 @@ class SquatAnalyzer:
         lower_leg_length = max(abs(ankle[1] - knee[1]), 1)
         hip_depth = (hip[1] - knee[1]) / lower_leg_length
 
+        return self._analyze_metrics(
+            side=side,
+            hip_angle=hip_angle,
+            knee_angle=knee_angle,
+            hip_depth=hip_depth,
+        )
+
+    def _front_metrics(self, points, scores):
+        """양쪽 하체가 모두 보일 때 정면 판정과 자세 측정값을 반환한다."""
+        if any(
+            scores[index] < KEYPOINT_CONFIDENCE
+            for index in SQUAT_FRONT_INDEXES
+        ):
+            return None
+
+        shoulder_center = self._midpoint(points[5], points[6])
+        hip_center = self._midpoint(points[11], points[12])
+        shoulder_width = math.dist(points[5], points[6])
+        torso_length = max(math.dist(shoulder_center, hip_center), 1)
+        front_view_ratio = shoulder_width / torso_length
+
+        left_hip_angle = calculate_angle(points[5], points[11], points[13])
+        right_hip_angle = calculate_angle(points[6], points[12], points[14])
+        left_knee_angle = calculate_angle(points[11], points[13], points[15])
+        right_knee_angle = calculate_angle(points[12], points[14], points[16])
+        left_hip_depth = self._hip_depth(points[11], points[13], points[15])
+        right_hip_depth = self._hip_depth(points[12], points[14], points[16])
+
+        return {
+            "hip_angle": (left_hip_angle + right_hip_angle) / 2,
+            "knee_angle": (left_knee_angle + right_knee_angle) / 2,
+            "hip_depth": (left_hip_depth + right_hip_depth) / 2,
+            "left_hip_angle": left_hip_angle,
+            "right_hip_angle": right_hip_angle,
+            "left_knee_angle": left_knee_angle,
+            "right_knee_angle": right_knee_angle,
+            "front_view_ratio": front_view_ratio,
+        }
+
+    @staticmethod
+    def _midpoint(point_a, point_b):
+        return (
+            (point_a[0] + point_b[0]) / 2,
+            (point_a[1] + point_b[1]) / 2,
+        )
+
+    @staticmethod
+    def _hip_depth(hip, knee, ankle):
+        lower_leg_length = max(abs(ankle[1] - knee[1]), 1)
+        return (hip[1] - knee[1]) / lower_leg_length
+
+    def _select_view(self, front_metrics):
+        """정면 비율을 연속 확인해 안정적인 촬영 방향을 선택한다."""
+        front_view_ratio = (
+            front_metrics["front_view_ratio"]
+            if front_metrics is not None
+            else 0
+        )
+        threshold = (
+            FRONT_VIEW_EXIT_RATIO
+            if self.current_view == "FRONT"
+            else FRONT_VIEW_RATIO
+        )
+        candidate_view = (
+            "FRONT"
+            if front_view_ratio >= threshold
+            else "SIDE"
+        )
+
+        if self.current_view is None:
+            self.current_view = candidate_view
+            return self.current_view
+
+        if candidate_view == self.current_view:
+            self.pending_view = None
+            self.pending_view_frames = 0
+            return self.current_view
+
+        if candidate_view != self.pending_view:
+            self.pending_view = candidate_view
+            self.pending_view_frames = 1
+        else:
+            self.pending_view_frames += 1
+
+        if self.pending_view_frames >= VIEW_CONFIRM_FRAMES:
+            self.current_view = candidate_view
+            self.pending_view = None
+            self.pending_view_frames = 0
+            self._reset_rep_progress()
+
+        return self.current_view
+
+    def _reset_rep_progress(self):
+        """촬영 방향 전환 시 누적 횟수는 유지하고 진행 중인 반복만 취소한다."""
+        self.rep_in_progress = False
+        self.reached_bottom = False
+        self.bottom_frames = 0
+        self.standing_frames = 0
+        self.status = "READY"
+
+    def _analyze_metrics(
+        self,
+        *,
+        side,
+        hip_angle,
+        knee_angle,
+        hip_depth,
+        left_hip_angle=None,
+        right_hip_angle=None,
+        left_knee_angle=None,
+        right_knee_angle=None,
+        front_view_ratio=None,
+    ):
+        """촬영 방향에 맞게 계산된 측정값으로 공통 반복 상태를 갱신한다."""
         # 각 프레임을 서기, 시작, 최저점 조건으로 분류한다.
         is_standing = (
             hip_angle >= STANDING_HIP_ANGLE
@@ -114,6 +257,11 @@ class SquatAnalyzer:
             hip_angle=hip_angle,
             knee_angle=knee_angle,
             hip_depth=hip_depth,
+            left_hip_angle=left_hip_angle,
+            right_hip_angle=right_hip_angle,
+            left_knee_angle=left_knee_angle,
+            right_knee_angle=right_knee_angle,
+            front_view_ratio=front_view_ratio,
         )
 
     def person_not_found(self):
@@ -129,6 +277,11 @@ class SquatAnalyzer:
         hip_angle=None,
         knee_angle=None,
         hip_depth=None,
+        left_hip_angle=None,
+        right_hip_angle=None,
+        left_knee_angle=None,
+        right_knee_angle=None,
+        front_view_ratio=None,
     ):
         """UI 계약에 맞는 스쿼트 분석 결과를 구성한다."""
         return {
@@ -141,6 +294,11 @@ class SquatAnalyzer:
                 "hip_angle": hip_angle,
                 "knee_angle": knee_angle,
                 "hip_depth": hip_depth,
+                "left_hip_angle": left_hip_angle,
+                "right_hip_angle": right_hip_angle,
+                "left_knee_angle": left_knee_angle,
+                "right_knee_angle": right_knee_angle,
+                "front_view_ratio": front_view_ratio,
             },
             "error": None,
         }

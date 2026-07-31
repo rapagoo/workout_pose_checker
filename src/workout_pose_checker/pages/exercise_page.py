@@ -208,6 +208,34 @@ class ExercisePage(QWidget):
 
     # --- 기능 및 데이터 설정 함수 ---
 
+    # 이전 set_config 구현(참고용, 실행되지 않음)
+    # def set_config(self, mode="횟수", level=30, image_idx=0):
+    #     self.mode = mode
+    #     self.target_level = level
+    #     self.exercise_code, self.exercise_name = self.EXERCISES.get(
+    #         image_idx,
+    #         self.EXERCISES[0],
+    #     )
+    #     self.success_count = 0
+    #     self.fail_count = 0
+    #     self.elapsed_seconds = 0
+    #     self.status = "READY"
+    #
+    #     if self.pose_service is not None:
+    #         self.pose_service.reset(self.exercise_code)
+    #
+    #     unit = "분" if mode == "시간" else "회"
+    #     self.goal_label.setText(
+    #         f"목표 - {self.exercise_name} {self.target_level}{unit}!"
+    #     )
+    #     self.lbl_timer.setText("00:00")
+    #     self.update_status()
+    #     self.progress_bar.setRange(0, self.target_level if level > 0 else 1)
+    #     self.progress_bar.setValue(0)
+    #     self.update_counts()
+    #     self.timer.start(1000)
+    #     self.start_camera()
+
     def set_config(self, mode="횟수", level=30, image_idx=0):
 
         self.mode = mode
@@ -310,6 +338,14 @@ class ExercisePage(QWidget):
         display_frame = cv2.flip(frame, 1)
         self.update_frame(display_frame)
 
+    # 이전 apply_analysis 구현(참고용, 실행되지 않음)
+    # def apply_analysis(self, analysis):
+    #     self.status = analysis["status"]
+    #     self.success_count = analysis["success_count"]
+    #     self.fail_count = analysis.get("failure_count", 0)
+    #     self.update_status()
+    #     self.update_counts()
+
     def apply_analysis(self, analysis):
 
         """포즈 서비스 결과를 운동 화면의 상태와 카운트에 반영한다."""
@@ -366,6 +402,13 @@ class ExercisePage(QWidget):
         )
         self.video_label.setPixmap(scaled_pixmap)
 
+    # 이전 update_timer 구현(참고용, 실행되지 않음)
+    # def update_timer(self):
+    #     self.elapsed_seconds += 1
+    #     mins = self.elapsed_seconds // 60
+    #     secs = self.elapsed_seconds % 60
+    #     self.lbl_timer.setText(f"{mins:02d}:{secs:02d}")
+
     def update_timer(self):
 
         self.elapsed_seconds += 1
@@ -395,6 +438,15 @@ class ExercisePage(QWidget):
             if self.target_level > 0 and self.elapsed_seconds >= self.total_seconds:
 
                 self.finish_exercise()
+
+    # 이전 update_counts 구현(참고용, 실행되지 않음)
+    # def update_counts(self):
+    #     total = self.success_count + self.fail_count
+    #     unit = "분" if self.mode == "시간" else "회"
+    #     self.lbl_success.setText(f"성공: {self.success_count}{unit}")
+    #     self.lbl_fail.setText(f"실패: {self.fail_count}{unit}")
+    #     self.lbl_total.setText(f"총합: {total}{unit}")
+    #     self.progress_bar.setValue(self.success_count)
 
     def update_counts(self):
 

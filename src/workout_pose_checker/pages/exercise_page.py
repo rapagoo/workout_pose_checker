@@ -206,7 +206,7 @@ class ExercisePage(QWidget):
         return lbl
 
     # --- 기능 및 데이터 설정 함수 ---
-
+    """ 수정전 코드 주석 처리
     def set_config(self, mode="횟수", level=30, image_idx=0):
         
         self.mode = mode
@@ -237,6 +237,72 @@ class ExercisePage(QWidget):
         # 타이머 시작
         self.timer.start(1000)
         self.start_camera()
+    """
+
+    def set_config(self, mode="횟수", level=30, image_idx=0):
+
+        self.mode = mode
+        self.target_level = level
+
+        self.exercise_code, self.exercise_name = self.EXERCISES.get(
+            image_idx,
+            self.EXERCISES[0]
+        )
+
+        # 초기화
+        self.success_count = 0
+        self.fail_count = 0
+        self.elapsed_seconds = 0
+        self.status = "READY"
+
+
+        # 목표 표시
+        if self.mode == "시간":
+
+            self.goal_label.setText(
+                f"목표 - {self.exercise_name} {self.target_level}분!"
+            )
+
+            # 분 -> 초
+            self.total_seconds = self.target_level * 60
+
+            self.progress_bar.setRange(
+                0,
+                self.total_seconds
+            )
+
+        else:
+
+            self.goal_label.setText(
+                f"목표 - {self.exercise_name} {self.target_level}회!"
+            )
+
+            self.progress_bar.setRange(
+                0,
+                self.target_level
+            )
+
+
+        self.progress_bar.setValue(0)
+
+        self.lbl_timer.setText("00:00")
+
+        self.update_status()
+        self.update_counts()
+
+
+        if self.pose_service:
+
+            self.pose_service.reset(
+                self.exercise_code
+            )
+
+
+        # 시작
+        self.timer.start(1000)
+
+        self.start_camera()
+
 
     def start_camera(self):
         """기본 웹캠을 열고 프레임 갱신을 시작한다."""
@@ -274,12 +340,36 @@ class ExercisePage(QWidget):
         display_frame = cv2.flip(frame, 1)
         self.update_frame(display_frame)
 
+    """"
     def apply_analysis(self, analysis):
-        """포즈 서비스 결과를 운동 화면의 상태와 카운트에 반영한다."""
+        
         self.status = analysis["status"]
         self.success_count = analysis["success_count"]
         self.fail_count = analysis.get("failure_count", 0)
         self.update_status()
+        self.update_counts()
+    """
+
+    def apply_analysis(self, analysis):
+
+        """포즈 서비스 결과를 운동 화면의 상태와 카운트에 반영한다."""
+        self.status = analysis["status"]
+
+
+        self.success_count = analysis.get(
+            "success_count",
+            self.success_count
+        )
+
+
+        self.fail_count = analysis.get(
+            "failure_count",
+            self.fail_count
+        )
+
+
+        self.update_status()
+
         self.update_counts()
 
     def update_status(self):
@@ -316,15 +406,47 @@ class ExercisePage(QWidget):
         )
         self.video_label.setPixmap(scaled_pixmap)
 
+    """
     def update_timer(self):
-        """1초마다 실행되는 타이머 함수"""
+        
         self.elapsed_seconds += 1
         mins = self.elapsed_seconds // 60
         secs = self.elapsed_seconds % 60
         self.lbl_timer.setText(f"{mins:02d}:{secs:02d}")
+    """
 
+    def update_timer(self):
+
+        self.elapsed_seconds += 1
+
+
+        mins = self.elapsed_seconds // 60
+        secs = self.elapsed_seconds % 60
+
+
+        self.lbl_timer.setText(
+            f"{mins:02d}:{secs:02d}"
+        )
+
+
+        # ============================
+        # 시간 모드
+        # ============================
+
+        if self.mode == "시간":
+
+            self.progress_bar.setValue(
+                self.elapsed_seconds
+            )
+
+
+            # 시간 종료
+            if self.elapsed_seconds >= self.total_seconds:
+
+                self.finish_exercise()    
+    """"
     def update_counts(self):
-        """성공/실패 카운트 업데이트 시 호출"""
+       
         total = self.success_count + self.fail_count
         unit = "분" if self.mode == "시간" else "회"
         
@@ -334,6 +456,48 @@ class ExercisePage(QWidget):
         
         # 진행률 업데이트
         self.progress_bar.setValue(self.success_count)
+    """    
+
+    def update_counts(self):
+
+        total = (
+            self.success_count
+            +
+            self.fail_count
+        )
+
+
+        # 성공 실패는 항상 회
+        self.lbl_success.setText(
+            f"성공: {self.success_count}회"
+        )
+
+
+        self.lbl_fail.setText(
+            f"실패: {self.fail_count}회"
+        )
+
+
+        self.lbl_total.setText(
+            f"총합: {total}회"
+        )
+
+
+        # ============================
+        # 횟수 모드 진행률
+        # ============================
+
+        if self.mode == "횟수":
+
+            self.progress_bar.setValue(
+                self.success_count
+            )
+
+
+            # 목표 달성
+            if self.success_count >= self.target_level:
+
+                self.finish_exercise()
 
     def quit_exercise(self):
         """포기하기 버튼 클릭 시"""
@@ -349,7 +513,24 @@ class ExercisePage(QWidget):
         self.timer.stop()
         self.stop_camera(reset_label=False)
         super().closeEvent(event)
+        
+    def finish_exercise(self):
 
+        self.timer.stop()
+
+        self.stop_camera()
+
+
+        if self.main_window:
+
+            self.main_window.show_result_page(
+
+                success=self.success_count,
+
+                fail=self.fail_count,
+
+                time=self.elapsed_seconds
+            )
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

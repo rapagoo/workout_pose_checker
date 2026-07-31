@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QApplication, QStackedWidget, QVBoxLayout, QWidget
 from mock_pose_service import MockPoseService
 from pages.choose_page import ChoosePage
 from pages.exercise_page import ExercisePage
-
+from pages.result_page import ResultPage
 
 class MainWindow(QWidget):
 
@@ -20,9 +20,14 @@ class MainWindow(QWidget):
         self.choose_page = ChoosePage(self)
         self.pose_service = MockPoseService(frames_per_status=30)
         self.exercise_page = ExercisePage(self, pose_service=self.pose_service)
+        self.result_page = ResultPage(self)
+
+        self.success_count = 0
+        self.fail_count = 0
 
         self.stack.addWidget(self.choose_page)
         self.stack.addWidget(self.exercise_page)
+        self.stack.addWidget(self.result_page)
 
         # 메인 레이아웃 설정 (여백 제거)
         layout = QVBoxLayout()
@@ -55,6 +60,18 @@ class MainWindow(QWidget):
     def show_choose_page(self):
         
         self.stack.setCurrentWidget(self.choose_page)
+
+    def show_result_page(self, success, fail, time):
+
+        self.result_page.set_result(
+            success,
+            fail,
+            time
+        )
+
+        self.stack.setCurrentWidget(
+            self.result_page
+        )
 
 
 if __name__ == "__main__":

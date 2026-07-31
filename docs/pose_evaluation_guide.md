@@ -76,7 +76,7 @@ READY → GO_DOWN → GO_UP → SUCCESS
 
 ### `src/workout_pose_checker/analyzers/pushup.py`
 
-팔굽혀펴기의 팔꿈치 각도와 어깨-엉덩이-발목의 몸통 각도를 계산합니다.
+팔굽혀펴기의 촬영 방향을 구분하고 팔꿈치 각도와 몸통 각도를 계산합니다.
 
 ```text
 READY → GO_DOWN → GO_UP → SUCCESS
@@ -87,8 +87,14 @@ READY → GO_DOWN → GO_UP → SUCCESS
 - 아래 자세가 연속 3프레임 유지되면 `GO_UP`
 - 아래 자세를 거친 뒤 위 자세가 연속 3프레임 유지되면 성공 횟수 증가
 - 진행 중 몸통이 기준보다 굽으면 `KEEP_BODY_STRAIGHT`
+- 양팔과 몸통이 보이고 어깨 너비/몸통 길이 비율이 기준 이상이면 `FRONT`로 판정
+- 정면에서는 좌우 팔꿈치 각도의 평균으로 위·아래 자세를 판정
+- 측면에서는 기존처럼 신뢰도가 높은 한쪽과 몸통 각도로 자세를 판정
+- 방향 변화는 연속 5프레임 확인한 뒤 적용하며, 전환 시 진행 중인 반복만 초기화
+- 정면 유지 중에는 더 낮은 종료 기준을 사용해 경계값 주변의 잦은 전환을 방지
 
 판정 임계값은 파일 위쪽의 `TOP_*`, `START_*`, `BOTTOM_*`,
+`FRONT_VIEW_RATIO`, `FRONT_VIEW_EXIT_RATIO`, `VIEW_CONFIRM_FRAMES`,
 `STRAIGHT_BODY_ANGLE`, `CONFIRM_FRAMES` 상수에서 조정합니다.
 
 ### `src/workout_pose_checker/webcam_pose.py`
@@ -98,6 +104,7 @@ READY → GO_DOWN → GO_UP → SUCCESS
 - 웹캠에서 OpenCV 프레임을 읽습니다.
 - `PoseService`에 프레임과 운동 코드를 전달합니다.
 - 반환된 관절, 각도, 상태와 성공 횟수를 화면에 그립니다.
+- 정면 팔굽혀펴기에서는 `Side: FRONT`, 좌우 팔꿈치 각도와 정면 비율을 표시합니다.
 - `q` 또는 `Esc`로 종료합니다.
 
 실제 UI는 이 파일을 그대로 호출하기보다 `PoseService` 호출 방식과 결과 표시

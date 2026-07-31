@@ -60,7 +60,7 @@ service.reset(exercise="squat")
 
 ### `src/workout_pose_checker/analyzers/squat.py`
 
-스쿼트의 엉덩이·무릎 각도와 엉덩이 깊이를 계산하고 반복 상태를 관리합니다.
+스쿼트의 촬영 방향을 자동 구분하고 엉덩이·무릎 각도와 깊이를 계산합니다.
 
 ```text
 READY → GO_DOWN → GO_UP → SUCCESS
@@ -70,9 +70,12 @@ READY → GO_DOWN → GO_UP → SUCCESS
 - 최저점 조건이 연속 3프레임 유지되면 `GO_UP`
 - 최저점에 도달한 뒤 선 자세가 연속 3프레임 유지되면 성공 횟수 증가
 - 필요한 관절이 보이지 않으면 `JOINTS_NOT_VISIBLE`
+- 정면에서는 양쪽 엉덩이·무릎 각도와 깊이의 평균으로 자세를 판정
+- 측면에서는 기존처럼 신뢰도가 높은 한쪽 관절로 자세를 판정
+- 방향 변화는 연속 5프레임 확인한 뒤 적용하며 누적 횟수는 유지
 
 판정 임계값은 파일 위쪽의 `STANDING_*`, `START_*`, `BOTTOM_*`,
-`CONFIRM_FRAMES` 상수에서 조정합니다.
+`FRONT_VIEW_*`, `VIEW_CONFIRM_FRAMES`, `CONFIRM_FRAMES` 상수에서 조정합니다.
 
 ### `src/workout_pose_checker/analyzers/pushup.py`
 

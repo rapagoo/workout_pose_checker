@@ -75,24 +75,30 @@ def draw_analysis(frame, analysis):
     if analysis["side"] is not None:
         draw_text(frame, f'Side: {analysis["side"]}', 40)
         if analysis["exercise"] == "squat":
-            draw_text(
-                frame,
-                f'Hip angle: {metrics["hip_angle"]:.1f}',
-                70,
-                (0, 255, 255),
-            )
-            draw_text(
-                frame,
-                f'Knee angle: {metrics["knee_angle"]:.1f}',
-                100,
-                (0, 255, 255),
-            )
-            draw_text(
-                frame,
-                f'Hip depth: {metrics["hip_depth"]:.2f}',
-                130,
-                (0, 255, 255),
-            )
+            hip_angle = metrics["hip_angle"]
+            knee_angle = metrics["knee_angle"]
+            hip_depth = metrics["hip_depth"]
+            if hip_angle is not None:
+                draw_text(
+                    frame,
+                    f"Hip angle: {hip_angle:.1f}",
+                    70,
+                    (0, 255, 255),
+                )
+            if knee_angle is not None:
+                draw_text(
+                    frame,
+                    f"Knee angle: {knee_angle:.1f}",
+                    100,
+                    (0, 255, 255),
+                )
+            if hip_depth is not None:
+                draw_text(
+                    frame,
+                    f"Hip depth: {hip_depth:.2f}",
+                    130,
+                    (0, 255, 255),
+                )
         elif analysis["exercise"] == "pushup":
             elbow_angle = metrics["elbow_angle"]
             if elbow_angle is not None:

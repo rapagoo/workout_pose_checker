@@ -1,33 +1,15 @@
 """웹캠 입력으로 포즈 평가 기능을 확인하는 간단한 실행 프로그램."""
 
 import argparse
-from pathlib import Path
 
 import cv2
 
+from .app_paths import get_model_path
 from .pose_service import PoseService
+from .pose_renderer import draw_pose
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
 WINDOW_NAME = "Workout Pose Checker"
 EXERCISE = "squat"
-
-POSE_CONNECTIONS = (
-    (5, 6),
-    (5, 7),
-    (7, 9),
-    (6, 8),
-    (8, 10),
-    (5, 11),
-    (6, 12),
-    (11, 12),
-    (11, 13),
-    (13, 15),
-    (12, 14),
-    (14, 16),
-)
-DRAW_CONFIDENCE = 0.5
-
 
 def draw_text(frame, text, y, color=(255, 255, 255)):
     """프레임 왼쪽의 지정된 높이에 상태 문구를 그린다."""
@@ -40,31 +22,6 @@ def draw_text(frame, text, y, color=(255, 255, 255)):
         color,
         2,
     )
-
-
-def draw_pose(frame, keypoints):
-    """신뢰도 기준을 통과한 관절과 연결선을 프레임에 그린다."""
-    visible = {
-        point["index"]: (
-            int(point["x"]),
-            int(point["y"]),
-        )
-        for point in keypoints
-        if point["confidence"] >= DRAW_CONFIDENCE
-    }
-
-    for start, end in POSE_CONNECTIONS:
-        if start in visible and end in visible:
-            cv2.line(
-                frame,
-                visible[start],
-                visible[end],
-                (0, 255, 0),
-                2,
-            )
-
-    for position in visible.values():
-        cv2.circle(frame, position, 4, (0, 0, 255), -1)
 
 
 def draw_analysis(frame, analysis):
@@ -156,7 +113,7 @@ def draw_analysis(frame, analysis):
 
 def main(exercise=EXERCISE):
     """웹캠 프레임을 반복 분석하며 q 또는 Esc 입력 전까지 결과를 보여준다."""
-    service = PoseService(model_path=MODEL_PATH)
+    service = PoseService(model_path=get_model_path())
 
     camera = cv2.VideoCapture(0)
 

@@ -1,4 +1,6 @@
 import sys
+import time
+
 import cv2
 
 from PySide6.QtWidgets import (
@@ -7,7 +9,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap
-import time
+
+from workout_pose_checker.pose_renderer import draw_pose
+
 
 class ExercisePage(QWidget):
 
@@ -26,13 +30,19 @@ class ExercisePage(QWidget):
         1: ("pushup", "팔굽혀펴기"),
     }
 
-    def __init__(self, main_window=None, pose_service=None):
+    def __init__(
+        self,
+        main_window=None,
+        pose_service=None,
+        show_pose_landmarks=False,
+    ):
         super().__init__()
 
         self.success_until = 0
 
         self.main_window = main_window
         self.pose_service = pose_service
+        self.show_pose_landmarks = show_pose_landmarks
 
         # 운동 데이터 관련 상태 변수
         self.mode = "횟수"       # "시간" 또는 "횟수"
@@ -339,6 +349,9 @@ class ExercisePage(QWidget):
                 exercise=self.exercise_code,
             )
             self.apply_analysis(analysis)
+
+            if self.show_pose_landmarks:
+                draw_pose(frame, analysis.get("keypoints", []))
 
         # 분석에는 원본을 사용하고 출력 화면에만 좌우 반전을 적용한다.
         display_frame = cv2.flip(frame, 1)

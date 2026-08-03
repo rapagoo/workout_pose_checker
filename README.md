@@ -69,11 +69,41 @@ models/yolo26n-pose.pt
 python src/workout_pose_checker/main_window.py
 ```
 
+### Windows 실행 파일 빌드
+
+`yolo_pose` Conda 환경을 활성화한 뒤 프로젝트 루트에서 빌드 스크립트를
+실행합니다.
+
+```powershell
+conda activate yolo_pose
+powershell -ExecutionPolicy Bypass -File scripts/build_windows.ps1
+```
+
+빌드가 끝나면 `dist/WorkoutPoseChecker/` 폴더가 생성됩니다. 이 폴더에는 실행
+파일과 필요한 라이브러리, `models/yolo26n-pose.pt`가 함께 배치됩니다.
+
+```text
+dist/WorkoutPoseChecker/
+  WorkoutPoseChecker.exe
+  models/yolo26n-pose.pt
+  _internal/
+```
+
+실행 파일만 따로 옮기지 말고 `WorkoutPoseChecker` 폴더 전체를 배포해야 합니다.
+
 현재 기본 설정은 실제 `PoseService`를 사용합니다. 모델 없이 UI 흐름만 테스트하려면
-`src/workout_pose_checker/main_window.py`의 다음 값을 변경합니다.
+`src/workout_pose_checker/main_window.py`의 다음 스위치를 변경합니다.
 
 ```python
 USE_MOCK_POSE_SERVICE = True
+```
+
+실제 YOLO 모델이 인식한 관절점과 연결선을 운동 화면에 표시하려면 같은 파일의
+다음 스위치를 활성화합니다. `False`로 설정해도 자세 분석은 계속 실행되며 화면의
+관절 표시만 숨겨집니다.
+
+```python
+SHOW_POSE_LANDMARKS = True
 ```
 
 별도의 OpenCV 창에서 포즈 분석 기능만 확인하려면 운동 종류를 지정하여 실행합니다.
@@ -174,6 +204,8 @@ requirements-lock.txt       설치 패키지 스냅샷
   상태 판정 방식과 기능 확장 방법
 - [모델·UI 연동 규칙](docs/model_ui_contract.md): UI 호출 방법과 반환 데이터 계약
 - [추가 트러블슈팅 기록](troubleshoot.md): 개발 중 확인한 문제와 후속 개선 사항
+- [Windows 실행 파일 빌드 가이드](docs/windows_build_guide.md): 빌드, 실행,
+  배포 및 오류 해결 방법
 
 ## 브랜치 운영
 

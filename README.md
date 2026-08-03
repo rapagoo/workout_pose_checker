@@ -204,6 +204,8 @@ requirements-lock.txt       설치 패키지 스냅샷
   상태 판정 방식과 기능 확장 방법
 - [모델·UI 연동 규칙](docs/model_ui_contract.md): UI 호출 방법과 반환 데이터 계약
 - [추가 트러블슈팅 기록](troubleshoot.md): 개발 중 확인한 문제와 후속 개선 사항
+- [Windows 실행 파일 빌드 가이드](docs/windows_build_guide.md): 빌드, 실행,
+  배포 및 오류 해결 방법
 
 ## 브랜치 운영
 

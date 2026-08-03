@@ -11,12 +11,11 @@ if str(SRC_ROOT) not in sys.path:
 from workout_pose_checker.pages.choose_page import ChoosePage
 from workout_pose_checker.pages.exercise_page import ExercisePage
 from workout_pose_checker.pages.result_page import ResultPage
+from workout_pose_checker.app_paths import get_model_path
 from workout_pose_checker.mock_pose_service import MockPoseService
 from workout_pose_checker.pose_service import PoseService
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
 USE_MOCK_POSE_SERVICE = False
 SHOW_POSE_LANDMARKS = False
 
@@ -26,7 +25,7 @@ def create_pose_service():
     if USE_MOCK_POSE_SERVICE:
         return MockPoseService(frames_per_status=30)
 
-    return PoseService(model_path=MODEL_PATH)
+    return PoseService(model_path=get_model_path())
 
 class MainWindow(QWidget):
 

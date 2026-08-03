@@ -69,6 +69,28 @@ models/yolo26n-pose.pt
 python src/workout_pose_checker/main_window.py
 ```
 
+### Windows 실행 파일 빌드
+
+`yolo_pose` Conda 환경을 활성화한 뒤 프로젝트 루트에서 빌드 스크립트를
+실행합니다.
+
+```powershell
+conda activate yolo_pose
+powershell -ExecutionPolicy Bypass -File scripts/build_windows.ps1
+```
+
+빌드가 끝나면 `dist/WorkoutPoseChecker/` 폴더가 생성됩니다. 이 폴더에는 실행
+파일과 필요한 라이브러리, `models/yolo26n-pose.pt`가 함께 배치됩니다.
+
+```text
+dist/WorkoutPoseChecker/
+  WorkoutPoseChecker.exe
+  models/yolo26n-pose.pt
+  _internal/
+```
+
+실행 파일만 따로 옮기지 말고 `WorkoutPoseChecker` 폴더 전체를 배포해야 합니다.
+
 현재 기본 설정은 실제 `PoseService`를 사용합니다. 모델 없이 UI 흐름만 테스트하려면
 `src/workout_pose_checker/main_window.py`의 다음 스위치를 변경합니다.
 

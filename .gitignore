@@ -23,6 +23,10 @@ runs/
 *.pt
 *.onnx
 
+# PyInstaller build outputs
+/build/
+/dist/
+
 # Ultralytics local state
 .ultralytics/
 

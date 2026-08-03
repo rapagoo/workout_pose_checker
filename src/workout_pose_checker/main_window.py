@@ -17,7 +17,7 @@ from workout_pose_checker.pose_service import PoseService
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MODEL_PATH = PROJECT_ROOT / "models" / "yolo26n-pose.pt"
-USE_MOCK_POSE_SERVICE = True
+USE_MOCK_POSE_SERVICE = False
 
 
 def create_pose_service():
@@ -38,6 +38,8 @@ class MainWindow(QWidget):
         
         self.stack = QStackedWidget()
 
+        self.stack.setMinimumSize(1000,800)
+
         # 페이지 인스턴스 생성 (self를 전달하여 MainWindow 조작 가능하게 함)
         self.choose_page = ChoosePage(self)
         self.pose_service = create_pose_service()
@@ -50,11 +52,13 @@ class MainWindow(QWidget):
         self.stack.addWidget(self.choose_page)
         self.stack.addWidget(self.exercise_page)
         self.stack.addWidget(self.result_page)
-
+        
         # 메인 레이아웃 설정 (여백 제거)
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.stack)
+
+
 
         self.setLayout(layout)
 

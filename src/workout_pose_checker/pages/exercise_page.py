@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap
-
+import time
 
 class ExercisePage(QWidget):
 
@@ -17,8 +17,8 @@ class ExercisePage(QWidget):
         "GO_UP": "올라오세요",
         "SUCCESS": "성공!",
         "KEEP_BODY_STRAIGHT": "몸을 곧게 펴세요",
-        "PERSON_NOT_FOUND": "화면 안으로 들어와 주세요",
-        "JOINTS_NOT_VISIBLE": "자세가 잘 보이도록 위치를 조정해 주세요",
+        "PERSON_NOT_FOUND": "화면 안으로 \n 들어와 주세요",
+        "JOINTS_NOT_VISIBLE": "자세가 잘 보이도록 \n 위치를 조정해 주세요",
     }
 
     EXERCISES = {
@@ -28,6 +28,8 @@ class ExercisePage(QWidget):
 
     def __init__(self, main_window=None, pose_service=None):
         super().__init__()
+
+        self.success_until = 0
 
         self.main_window = main_window
         self.pose_service = pose_service
@@ -86,9 +88,9 @@ class ExercisePage(QWidget):
             border-radius: 6px;
         }
         """)
-
+   
         self.setWindowTitle("운동 진행 중")
-        self.resize(800, 600)
+        self.resize(1000, 800)
 
         # ==========================================
         # 1. 상단 영역 (목표 + 프로그래스바 + 포기하기)
@@ -121,8 +123,9 @@ class ExercisePage(QWidget):
                 background-color: #C62828;
             }
         """)
-        self.btn_quit.setFixedWidth(100)
-        self.btn_quit.setFixedHeight(45)
+        
+        self.btn_quit.setFixedWidth(200)
+        self.btn_quit.setFixedHeight(60)
 
         # 상단 통합 레이아웃
         top_layout = QHBoxLayout()
@@ -165,6 +168,7 @@ class ExercisePage(QWidget):
         right_side_layout.addWidget(self.lbl_fail)
         right_side_layout.addWidget(self.lbl_total)
         right_side_layout.addStretch() # 아래 여백 채우기
+        right_side_layout.addStretch() 
         right_side_layout.addWidget(self.btn_quit)
 
         # ==========================================
@@ -190,13 +194,14 @@ class ExercisePage(QWidget):
         self.btn_quit.clicked.connect(self.quit_exercise)
 
     def create_info_card(self, text, color):
-        """카드 형태의 멋진 라벨 위젯 생성 헬퍼 함수"""
+
         lbl = QLabel(text, self)
         lbl.setAlignment(Qt.AlignCenter)
         lbl.setFixedHeight(70)
         lbl.setStyleSheet(f"""
             QLabel {{
                 background-color: white;
+
                 border-radius: 10px;
                 font-size: 18px;
                 font-weight: bold;
@@ -204,6 +209,7 @@ class ExercisePage(QWidget):
                 border: 1px solid #E0E0E0;
             }}
         """)
+        lbl.setFixedSize(200,80)
         return lbl
 
     # --- 기능 및 데이터 설정 함수 ---
@@ -347,30 +353,38 @@ class ExercisePage(QWidget):
     #     self.update_counts()
 
     def apply_analysis(self, analysis):
+        new_status = analysis["status"]
 
-        """포즈 서비스 결과를 운동 화면의 상태와 카운트에 반영한다."""
-        self.status = analysis["status"]
+        # 성공이면 1초 동안 유지
+        if new_status == "SUCCESS":
+            self.success_until = time.time() + 0.5
+            self.status = "SUCCESS"
 
+        # 성공 유지 시간이 끝난 후에만 다른 상태로 변경
+        elif time.time() >= self.success_until:
+            self.status = new_status
 
         self.success_count = analysis.get(
             "success_count",
             self.success_count
         )
 
-
         self.fail_count = analysis.get(
             "failure_count",
             self.fail_count
         )
 
-
         self.update_status()
-
         self.update_counts()
 
     def update_status(self):
         """상태 코드를 사용자용 안내 문구로 표시한다."""
+
         message = self.STATUS_MESSAGES.get(self.status, self.status)
+
+
+
+
         self.lbl_status.setText(message)
 
     def stop_camera(self, reset_label=True):

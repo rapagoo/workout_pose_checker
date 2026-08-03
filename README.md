@@ -70,10 +70,18 @@ python src/workout_pose_checker/main_window.py
 ```
 
 현재 기본 설정은 실제 `PoseService`를 사용합니다. 모델 없이 UI 흐름만 테스트하려면
-`src/workout_pose_checker/main_window.py`의 다음 값을 변경합니다.
+`src/workout_pose_checker/main_window.py`의 다음 스위치를 변경합니다.
 
 ```python
 USE_MOCK_POSE_SERVICE = True
+```
+
+실제 YOLO 모델이 인식한 관절점과 연결선을 운동 화면에 표시하려면 같은 파일의
+다음 스위치를 활성화합니다. `False`로 설정해도 자세 분석은 계속 실행되며 화면의
+관절 표시만 숨겨집니다.
+
+```python
+SHOW_POSE_LANDMARKS = True
 ```
 
 별도의 OpenCV 창에서 포즈 분석 기능만 확인하려면 운동 종류를 지정하여 실행합니다.

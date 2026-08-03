@@ -87,13 +87,15 @@ class ChoosePage(QWidget):
         """)
 
         self.setWindowTitle("운동 선택")
-        self.resize(800, 600)
+        self.resize(1000, 800)
 
         # 1. 운동 이미지 라벨
         self.image_label = QLabel(self)
-        self.image_label.setMaximumHeight(350)
+        self.image_label.setMaximumHeight(500)
         self.image_label.setAlignment(Qt.AlignCenter)
         self.image_label.setScaledContents(True)
+
+      
 
         if self.image_list:
             pixmap = self.cv_to_pixmap(self.image_list[0])
@@ -140,6 +142,22 @@ class ChoosePage(QWidget):
         self.add_1_btn = QPushButton("+1", self)
         self.add_5_btn = QPushButton("+5", self)
 
+
+        
+        self.name_label = QLabel("스쿼트")
+
+        self.name_label.setFixedHeight(50)
+
+        self.name_label.setAlignment(Qt.AlignCenter)
+
+        self.name_label.setStyleSheet("""
+        QLabel {
+            font-size: 48px;
+            font-weight: bold;
+            color: #1976D2;
+        }
+        """)
+
         self.temp_label.setAlignment(Qt.AlignCenter)
         self.temp_label.setFixedWidth(80)
         self.temp_label.setStyleSheet("""
@@ -174,6 +192,9 @@ class ChoosePage(QWidget):
         mode_layout.addWidget(self.btn_time)
         mode_layout.addWidget(self.btn_count)
 
+        name_layout = QHBoxLayout()
+        name_layout.addWidget(self.name_label)
+
         num_layout = QHBoxLayout()
         num_layout.addWidget(self.sub_5_btn)
         num_layout.addWidget(self.sub_1_btn)
@@ -186,6 +207,7 @@ class ChoosePage(QWidget):
         main_layout.setContentsMargins(20, 20, 20, 20)
 
         main_layout.addWidget(self.image_label)
+        main_layout.addLayout(name_layout)
         main_layout.addLayout(mode_layout)
         main_layout.addLayout(num_layout)
         main_layout.addLayout(btn_layout)
@@ -197,7 +219,10 @@ class ChoosePage(QWidget):
         if self.image_list:
             pixmap = self.cv_to_pixmap(self.image_list[self.current_index])
             self.image_label.setPixmap(pixmap)
-
+        if  self.current_index == 0:
+            self.name_label.setText("스쿼트" )
+        elif  self.current_index  == 1:         
+            self.name_label.setText("팔굽혀펴기")
     def prev(self):
         if self.current_index > 0:
             self.current_index -= 1

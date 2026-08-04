@@ -1,5 +1,12 @@
 # Workout Pose Checker
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10">
+  <img src="https://img.shields.io/badge/Ultralytics-YOLO-111F68?style=for-the-badge&logo=ultralytics&logoColor=white" alt="Ultralytics YOLO">
+  <img src="https://img.shields.io/badge/OpenCV-5.0-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white" alt="OpenCV 5.0">
+  <img src="https://img.shields.io/badge/PySide6-6.11-41CD52?style=for-the-badge&logo=qt&logoColor=white" alt="PySide6 6.11">
+</p>
+
 YOLO Pose와 PySide6를 이용하여 웹캠 영상에서 사용자의 운동 자세를 실시간으로
 분석하는 데스크톱 애플리케이션입니다.
 
